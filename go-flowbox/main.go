@@ -23,8 +23,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error creating FlowBox: %q\n", err)
 	}
-	fb.SetMaxChildrenPerLine(5)
-
 	for i := 0; i < 500; i++ {
 		lbl, err := gtk.LabelNew(fmt.Sprintf("Label %d", i+1))
 		if err != nil {
@@ -33,12 +31,34 @@ func main() {
 		fb.Insert(lbl, -1)
 	}
 
-	box, _ := gtk.BoxNew(gtk.ORIENTATION_HORIZONTAL, 0)
-	scroll, _ := gtk.ScrolledWindowNew(nil, nil)
-	scroll.Add(fb)
-	box.PackStart(scroll, true, true, 1)
+	text, _ := gtk.TextViewNew()
+	buffer, _ := text.GetBuffer()
+	text.SetEditable(false)
 
-	win.Add(box)
+	fb.SetActivateOnSingleClick(false)
+	fb.SetMaxChildrenPerLine(5)
+	fb.SetSelectionMode(gtk.SELECTION_MULTIPLE)
+	fb.Connect("selected-children-changed", func() {
+		buffer.SetText("")
+		for _, child := range fb.GetSelectedChildren() {
+			// The child widget of the FlowBoxChild is one of the labels we added earlier
+			w, _ := child.GetChild()
+			lbl, _ := w.GetProperty("label")
+			s := fmt.Sprintf("got a child: %p: index %d, label %q\n", child, child.GetIndex(), lbl)
+			buffer.InsertAtCursor(s)
+		}
+	})
+
+	paned, _ := gtk.PanedNew(gtk.ORIENTATION_VERTICAL)
+	scrollFlow, _ := gtk.ScrolledWindowNew(nil, nil)
+	scrollFlow.Add(fb)
+	scrollLog, _ := gtk.ScrolledWindowNew(nil, nil)
+	scrollLog.Add(text)
+	paned.Pack1(scrollFlow, true, true)
+	paned.Pack2(scrollLog, true, true)
+
+	win.Add(paned)
+	win.SetDefaultSize(640, 480)
 	win.ShowAll()
 	gtk.Main()
 }
