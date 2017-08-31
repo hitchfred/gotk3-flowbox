@@ -3,12 +3,13 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gotk3/gotk3/gtk"
 )
 
 func main() {
-	gtk.Init(nil)
+	gtk.Init(&os.Args)
 
 	win, err := gtk.WindowNew(gtk.WINDOW_TOPLEVEL)
 	if err != nil {
@@ -44,11 +45,16 @@ func main() {
 			// The child widget of the FlowBoxChild is one of the labels we added earlier
 			w, _ := child.GetChild()
 			lbl, _ := w.GetProperty("label")
-			s := fmt.Sprintf("got a child: %p: index %d, label %q\n", child, child.GetIndex(), lbl)
+			s := fmt.Sprintf("child selected: %p: index %d, label %q\n", child, child.GetIndex(), lbl)
 			buffer.InsertAtCursor(s)
 		}
 	})
-
+	fb.Connect("child-activated", func(fb *gtk.FlowBox, child *gtk.FlowBoxChild) {
+		w, _ := child.GetChild()
+		lbl, _ := w.GetProperty("label")
+		s := fmt.Sprintf("child activated: %p: index %d, label %q\n", child, child.GetIndex(), lbl)
+		buffer.SetText(s)
+	})
 	paned, _ := gtk.PanedNew(gtk.ORIENTATION_VERTICAL)
 	scrollFlow, _ := gtk.ScrolledWindowNew(nil, nil)
 	scrollFlow.Add(fb)
